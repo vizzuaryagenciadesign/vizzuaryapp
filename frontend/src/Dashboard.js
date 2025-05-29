@@ -1,5 +1,5 @@
-// src/Dashboard.js
 import React, { useEffect, useState } from 'react';
+import HeadlineSection from './HeadlineSection';
 import { getAuth, signOut } from 'firebase/auth';
 import axios from 'axios';
 import {
@@ -10,7 +10,19 @@ import {
   Container,
   CircularProgress,
   Box,
+  Paper,
+  Divider,
+  Stack,
+  IconButton,
+  Grid,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import CreateProjectForm from './CreateProjectForm';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,7 +31,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Buscar projetos da API
   const fetchProjects = async () => {
     setLoading(true);
     try {
@@ -31,7 +42,6 @@ const Dashboard = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log('Resposta da API:', response.data);
         setData(Array.isArray(response.data) ? response.data : []);
       }
     } catch (error) {
@@ -42,18 +52,16 @@ const Dashboard = () => {
     }
   };
 
-  // Logout do Firebase
   const handleLogout = async () => {
     const auth = getAuth();
     try {
       await signOut(auth);
-      navigate('/login'); // redireciona para login após logout
+      navigate('/login');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
   };
 
-  // Mostrar token no console
   const handleShowToken = async () => {
     const user = getAuth().currentUser;
     if (user) {
@@ -65,52 +73,167 @@ const Dashboard = () => {
     }
   };
 
+  const handleDelete = async (projectId) => {
+    const confirm = window.confirm('Tem certeza que deseja excluir este projeto?');
+    if (!confirm) return;
+
+    try {
+      const user = getAuth().currentUser;
+      const token = await user.getIdToken();
+
+      await axios.delete(`http://localhost:5000/api/projects/${projectId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      await fetchProjects(); // Atualiza a lista após exclusão
+    } catch (error) {
+      console.error('Erro na requisição DELETE:', error.response || error.message);
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
   }, []);
 
+
+
   return (
     <>
       {/* Navbar */}
-      <AppBar position="static">
+      <AppBar position="fixed" sx={{ backgroundColor: '#111' }}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Vizzuary - Dashboard
-          </Typography>
-          <Button color="inherit" onClick={handleShowToken}>
-            Mostrar Token
-          </Button>
-          <Button color="inherit" onClick={handleLogout}>
-            Logout
-          </Button>
+          <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              Vizzuary - Dashboard
+            </Typography>
+            <Box>
+                <Button
+                variant="contained"
+                sx={{
+                    backgroundColor: '#fff',
+                    color: '#000',              // texto preto
+                    '&:hover': { backgroundColor: '#ccc' }
+                }}
+                onClick={handleShowToken}
+                >
+                Mostrar Token
+                </Button>
+                <Button variant="contained" color="white" onClick={handleLogout}>
+                    Logout
+                </Button>
+            </Box>
+          </Container>
         </Toolbar>
       </AppBar>
 
+      <>
+  <HeadlineSection sx={{ mt: 5, pt: 7 }} />
+  {/* outros componentes */}
+</>
+
       {/* Conteúdo */}
-      <Container sx={{ mt: 4 }}>
+      <Container sx={{ mt: 4}}>
         <Typography variant="h4" gutterBottom>
           Painel de Projetos
         </Typography>
 
-        {/* Formulário para criar projetos */}
+        {/* Formulário */}
         <CreateProjectForm onProjectCreated={fetchProjects} />
-
-        {/* Lista ou loading */}
+        <Typography variant="h5" gutterBottom sx={{ pt: 5 }}>
+          Visualização de Projetos em Lista
+        </Typography>
+        {/* Lista */}
         {loading ? (
           <CircularProgress />
         ) : Array.isArray(data) && data.length > 0 ? (
           data.map((item) => (
-            <Box key={item.id} mb={2}>
-              <Typography variant="body1">ID: {item.id}</Typography>
-              <Typography variant="body2">
-                Nome: {item.nome || 'Sem nome'}
-              </Typography>
-              <hr />
-            </Box>
+            <Paper key={item.id} sx={{ px: 2, py: 3, mb: 2 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="subtitle2">ID: {item.id}</Typography>
+                  <Typography variant="body1">Nome: {item.nome || 'Sem nome'}</Typography>
+                </Box>
+                <Box>
+                  <IconButton color="primary" aria-label="editar" onClick={() => alert('Funcionalidade de edição em breve.')}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton color="error" aria-label="excluir" onClick={() => handleDelete(item.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              </Stack>
+            </Paper>
           ))
         ) : (
           <Typography>Nenhum projeto encontrado.</Typography>
         )}
+        <Typography variant="h5" gutterBottom sx={{ pt: 5 }}>
+          Visualização de Projetos em Cards
+        </Typography>
+        {loading ? (
+  <CircularProgress />
+)
+ : Array.isArray(data) && data.length > 0 ? (
+  <Grid container spacing={2}>
+    {data.map((item) => (
+      <Grid item xs={12} sm={6} md={4} key={item.id} size={4}>
+        <Paper sx={{ p: 3 }}>
+          <Stack spacing={1}>
+            <Typography variant="subtitle2">ID: {item.id}</Typography>
+            <Typography variant="body1">Nome: {item.nome || 'Sem nome'}</Typography>
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <IconButton color="primary" aria-label="editar" onClick={() => alert('Funcionalidade de edição em breve.')}>
+                <EditIcon />
+              </IconButton>
+              <IconButton color="error" aria-label="excluir" onClick={() => handleDelete(item.id)}>
+                <DeleteIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
+        </Paper>
+      </Grid>
+    ))}
+  </Grid>
+) : (
+  <Typography>Nenhum projeto encontrado.</Typography>
+)}
+        <Typography variant="h5" gutterBottom sx={{ pt: 5 }}>
+          Visualização de Projetos em Tabela
+        </Typography>
+{loading ? (
+  <CircularProgress />
+) : Array.isArray(data) && data.length > 0 ? (
+  <Table>
+    <TableHead>
+      <TableRow>
+        <TableCell>ID</TableCell>
+        <TableCell>Nome</TableCell>
+        <TableCell align="right">Ações</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {data.map((item) => (
+        <TableRow key={item.id}>
+          <TableCell>{item.id}</TableCell>
+          <TableCell>{item.nome || 'Sem nome'}</TableCell>
+          <TableCell align="right">
+            <IconButton color="primary" aria-label="editar" onClick={() => alert('Funcionalidade de edição em breve.')}>
+              <EditIcon />
+            </IconButton>
+            <IconButton color="error" aria-label="excluir" onClick={() => handleDelete(item.id)}>
+              <DeleteIcon />
+            </IconButton>
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+) : (
+  <Typography>Nenhum projeto encontrado.</Typography>
+)}
+
       </Container>
     </>
   );

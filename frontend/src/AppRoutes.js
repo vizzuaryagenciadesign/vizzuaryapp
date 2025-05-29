@@ -1,17 +1,15 @@
-// App.js
+// AppRoutes.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import LandingPage from './LandingPage';
 import Login from './Login';
 import Register from './Register';
 import Dashboard from './Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 
-function App() {
+const AppRoutes = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -22,10 +20,10 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route path="*" element={<LandingPage />} />
+        <Route path="*" element={<Login />} />
       </Routes>
     </Router>
   );
-}
+};
 
-export default App;
+export default AppRoutes;
